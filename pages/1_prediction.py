@@ -36,6 +36,10 @@ if uploaded_file is not None:
     # dataframe = pd.read_csv(uploaded_file)
     # st.write(dataframe)
 
+options_feature = st.multiselect(
+    'Please select the inpute features:',
+    ['Category', 'Price', 'Yelp Score', 'Risk', 'Location'],)
+
 
 st.subheader("")
 chart_data = pd.DataFrame(

@@ -100,6 +100,9 @@ SQLAlchemy==1.4.32
 sseclient==0.0.27
 stack-data==0.3.0
 streamlit==1.10.0
+scikit-image==0.19.3
+scikit-learn==1.2.2
+scipy==1.10.1
 temp-email-validator==0.1
 tenacity==8.0.1
 terminado==0.15.0
