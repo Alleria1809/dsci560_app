@@ -14,10 +14,8 @@ st.markdown(
     """
     ##### This website is for improving the LA Restaurant inspection.
     There are 3 main functions:
-    - Prediction: Extract valid predictors of restaurant scores for predictions 
-    on restaurant qualities and health risks.
-    - Segmentation: visualize the segmentation of restaurants to 
-    provide insights on the adjustment of inspection frequencies.
+    - Prediction: Extract valid predictors of restaurant scores for predictions on restaurant qualities and health risks.
+    - Segmentation: visualize the segmentation of restaurants to provide insights on the adjustment of inspection frequencies.
     - Recommendation: Recommend the restaurants based on the citizens' preferences.
 """
 )
