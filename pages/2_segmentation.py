@@ -68,7 +68,7 @@ def confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
     ellipse.set_transform(transf + ax.transData)
     return ax.add_patch(ellipse)
 
-@st.cache_data
+# @st.cache_data
 def data():
     X = np.random.normal(0, 1, 1000).reshape(-1, 2)
     return X
