@@ -37,7 +37,7 @@ if uploaded_file is not None:
     # st.write(dataframe)
 
 options_feature = st.multiselect(
-    'Please select the inpute features:',
+    'Please select the input features:',
     ['Category', 'Price', 'Yelp Score', 'Risk', 'Location'],)
 
 
