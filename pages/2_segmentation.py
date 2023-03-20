@@ -177,7 +177,7 @@ with col4:
     image4 = Image.open('price_size_mean.jpg')
     st.image(image4, caption='price_size_mean in clusters')
 
-col50, col51, col52 = st.columns([2,2,2])
+col50, col51, col52 = st.columns([1,2,1])
 with col51:
 #     st.markdown('#### Yelp Price & Size Mean in each cluster')
 #     image5 = Image.open('res.jpg')
