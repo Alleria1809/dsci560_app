@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
+from PIL import Image
 
 st.set_page_config(page_title="Segmentation", page_icon=":chopsticks:", layout="wide")
 
@@ -125,7 +126,20 @@ plt.figure(figsize=(5, 3))
 st.write(fig)
 #st.plotly_chart(fig)
 
-res_features = ['Noodles', 'Near USC', 'Low Price']
-st.markdown(f'#### common features of these restaurants: ')
-for idx, feature in enumerate(res_features):
-    st.write(f'cluster {idx} : {feature}')
+# res_features = ['Noodles', 'Near USC', 'Low Price']
+# st.markdown(f'#### common features of these restaurants: ')
+# for idx, feature in enumerate(res_features):
+#     st.write(f'cluster {idx} : {feature}')
+
+image = Image.open('yelp_score_mean.jpg')
+st.image(image, caption='yelp_score_mean in clusters')
+
+image1 = Image.open('yelp_open_hour_mean.jpg')
+st.image(image1, caption='yelp_open_hour_mean in clusters')
+
+image2 = Image.open('price_size_mean.jpg')
+st.image(image2, caption='price_size_mean in clusters')
+
+image3 = Image.open('yelp_review_count_mean.jpg')
+st.image(image3, caption='yelp_review_count_mean in clusters')
+

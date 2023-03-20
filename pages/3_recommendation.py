@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-
+import numpy as np
+import time
 
 st.set_page_config(page_title="Recommendation", page_icon=":sparkles:", layout="wide")
 
@@ -37,3 +38,21 @@ restaurants = {'Plan Check Kitchen + Bar': 'https://www.yelp.com/biz/plan-check-
 st.markdown(f'#### common features of these restaurants: ')
 for feature, link in restaurants.items():
     st.write(f'[{feature}]({link})')
+    
+progress_bar = st.sidebar.progress(0)
+status_text = st.sidebar.empty()
+last_rows = np.random.randn(1, 1)
+
+for i in range(1, 101):
+    # new_rows = last_rows[-1, :] + np.random.randn(5, 1).cumsum(axis=0)
+    status_text.text("%i%% Complete" % i)
+    progress_bar.progress(i)
+    # last_rows = new_rows
+    time.sleep(0.05)
+
+progress_bar.empty()
+
+# Streamlit widgets automatically run the script from top to bottom. Since
+# this button is not connected to any other logic, it just causes a plain
+# rerun.
+st.button("Re-run")
