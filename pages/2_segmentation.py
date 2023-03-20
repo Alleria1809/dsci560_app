@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 from PIL import Image
+import plotly.express as px
 
 st.set_page_config(page_title="Segmentation", page_icon=":chopsticks:", layout="wide")
 
@@ -123,23 +124,64 @@ for i, yi in enumerate(set(labels)):
 plt.tight_layout()
 plt.legend([f"cluster {i}" for i in range(cluster_slider)])
 plt.figure(figsize=(5, 3))
-st.write(fig)
+
+col00, col01, col02 = st.columns([1,3,1])
+with col01:
+    st.write(fig)
 #st.plotly_chart(fig)
+
+# count_df = pd.read_csv('count_res.csv')
+# clusters = list(count_df.index)
+# counts = list(count_df.score.values)
+  
+# fig = plt.figure(figsize = (10, 5))
+ 
+# # creating the bar plot
+# plt.bar(clusters, counts)
+col10, col11, col12 = st.columns([1,3,1])
+with col11:
+    st.markdown('#### Restaurant Count in each cluster')
+    count_df = {'cluster':[0,1,2], 'count':[1420, 1093, 271]}
+    fig = px.bar(
+        count_df,
+        x='cluster',
+        y='count',
+        color=['green', 'blue', 'red']
+    )
+    st.plotly_chart(fig, theme="streamlit", use_container_width=True)
 
 # res_features = ['Noodles', 'Near USC', 'Low Price']
 # st.markdown(f'#### common features of these restaurants: ')
 # for idx, feature in enumerate(res_features):
 #     st.write(f'cluster {idx} : {feature}')
 
-image = Image.open('yelp_score_mean.jpg')
-st.image(image, caption='yelp_score_mean in clusters')
+col1, col2= st.columns(2)
+with col1:
+    st.markdown('#### Yelp Score Mean in each cluster')
+    image1 = Image.open('yelp_score_mean.jpg')
+    st.image(image1, caption='yelp_score_mean in clusters')
 
-image1 = Image.open('yelp_open_hour_mean.jpg')
-st.image(image1, caption='yelp_open_hour_mean in clusters')
+with col2:
+    st.markdown('#### Yelp Review Counts Mean in each cluster')
+    image2 = Image.open('yelp_review_count_mean.jpg')
+    st.image(image2, caption='yelp_review_count_mean in clusters')
 
-image2 = Image.open('price_size_mean.jpg')
-st.image(image2, caption='price_size_mean in clusters')
+col3, col4= st.columns(2)
+with col3:
+    st.markdown('#### Yelp Open Hour Mean in each cluster')
+    image3 = Image.open('yelp_open_hour_mean.jpg')
+    st.image(image3, caption='yelp_open_hour_mean in clusters')
 
-image3 = Image.open('yelp_review_count_mean.jpg')
-st.image(image3, caption='yelp_review_count_mean in clusters')
+with col4:
+    st.markdown('#### Yelp Price & Size Mean in each cluster')
+    image4 = Image.open('price_size_mean.jpg')
+    st.image(image4, caption='price_size_mean in clusters')
 
+col50, col51, col52 = st.columns([2,2,2])
+with col51:
+#     st.markdown('#### Yelp Price & Size Mean in each cluster')
+#     image5 = Image.open('res.jpg')
+#     st.image(image5, caption='Results in clusters')
+    st.markdown('#### Below is the result:')
+    res_df = pd.read_csv('res.csv')
+    st.write(res_df)
