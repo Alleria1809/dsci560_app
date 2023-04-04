@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
-import matplotlib.transforms as transforms
+# import matplotlib.transforms as transforms
 from PIL import Image
 import plotly.express as px
-import seaborn as sns
+# import seaborn as sns
 import warnings
 from sklearn.preprocessing import StandardScaler
 from yellowbrick.cluster import KElbowVisualizer
