@@ -22,9 +22,9 @@ st.markdown(
 
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.info('**Open Data Source: [LA Open Data](https://data.lacity.org/Community-Economic-Development/Restaurant-and-Market-Health-Violations/ckya-qgys)**',icon="ℹ️")
+    st.info('**Open Data Source: [LA Open Data](https://data.lacity.org/Community-Economic-Development/Restaurant-and-Market-Health-Violations/ckya-qgys)**')
 with c2:
-    st.info('**GitHub: [@Project APP](https://github.com/Alleria1809/dsci560_app)**',icon="ℹ️")    
+    st.info('**GitHub: [@Project APP](https://github.com/Alleria1809/dsci560_app)**')    
 
 
 c4, c5 = st.columns(2)
