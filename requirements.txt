@@ -125,4 +125,5 @@ Werkzeug==2.0.3
 widgetsnbextension==3.6.1
 wrapt==1.14.0
 WTForms==3.0.1
+yellowbrick==1.5
 zipp==3.8.0
