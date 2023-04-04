@@ -93,7 +93,6 @@ requests==2.27.1
 requests-toolbelt==0.9.1
 rich==12.4.4
 rsa==4.8
-seaborn @ file:///tmp/build/80754af9/seaborn_1629307859561/work
 semver==2.13.0
 Send2Trash==1.8.0
 six==1.16.0
