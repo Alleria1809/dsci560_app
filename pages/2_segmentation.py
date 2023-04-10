@@ -11,6 +11,13 @@ import warnings
 from sklearn.preprocessing import StandardScaler
 from yellowbrick.cluster import KElbowVisualizer
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction import text 
+import pickle
+# import spacy
+
 
 warnings.filterwarnings('ignore')
 pd.set_option("display.max_columns", None)
@@ -37,28 +44,31 @@ st.markdown(
 # @st.cache_data
 # load raw features
 def raw_data():
-    model_df = pd.read_csv('features_for_segmentation.csv')
-    return model_df
-
+    raw_df = pd.read_csv('features_for_segmentation_0403.csv')
+    # raw_df = pd.read_csv('features_for_segmentation.csv')
+    return raw_df
 
 # @st.cache_data
 # load preprocessed features
 def load_data():
     model_df = pd.read_csv('features_0403.csv')
+    # model_df = pd.read_csv('features.csv')  # up to date data
     return model_df
 
 def pca(std_df):
     #Initiating PCA to reduce dimentions aka features to 3
     pca = PCA(n_components=3)
     pca.fit(std_df)
-    PCA_ds = pd.DataFrame(pca.transform(std_df), columns=(["feature1","feature2", "feature3"]))
+    PCA_ds = pd.DataFrame(pca.transform(std_df), columns=(["dim1","dim2", "dim3"]))
     # PCA_ds.describe().T
     return PCA_ds
 
-def kmean(best_k):
+def kmeans(best_k):
     model = KMeans(n_clusters=best_k, random_state=2009)
     model.fit(PCA_ds)
     labels = model.labels_
+    # save the labels generate with k-means(20)
+    # pickle.dump(labels, open("labels.p", "wb" ))
     return labels
     
 def find_k(PCA_ds):
@@ -69,15 +79,15 @@ def find_k(PCA_ds):
     return best_k
     
 def pca_plot(PCA_ds, best_k, X_df):
-    labels = kmean(best_k)
+    labels = kmeans(best_k)
     #Adding the Clusters feature to the orignal dataframe.
     PCA_ds['clusters'] = labels
     X_df['clusters'] = labels
     
     #A 3D Projection Of Data In The Reduced Dimension
-    x =PCA_ds["feature1"]
-    y =PCA_ds["feature2"]
-    z =PCA_ds["feature3"]
+    x =PCA_ds["dim1"]
+    y =PCA_ds["dim2"]
+    z =PCA_ds["dim3"]
     #To plot
     fig = plt.figure(figsize=(10,8))
     # ax = fig.add_subplot(111, projection="3d")
@@ -86,36 +96,137 @@ def pca_plot(PCA_ds, best_k, X_df):
     # plt.show()
     
     fig = px.scatter_3d(PCA_ds, x, y, z, color='clusters', title="A 3D Projection Of Data In The PCA Reduced Dimension(3 PCs)",
-                        color_continuous_scale=px.colors.sequential.Inferno)
+                        color_continuous_scale=px.colors.sequential.Agsunset)
     # tight layout
     # fig.show()
     return fig, X_df
 
 def count_plot(X_df):
     fig = px.histogram(X_df, x=X_df['clusters'], title="Distribution Of The Clusters",
-                    color = 'clusters')
+                    color = 'clusters', color_discrete_sequence=px.colors.qualitative.Plotly)
     fig.update_layout(bargap=0.2)
     return fig
 
 def scatter_plot_2d(X_df, x, y):
-    fig = px.scatter(X_df, x=x, y=y,color='clusters', color_continuous_scale=px.colors.sequential.Inferno,
+    fig = px.scatter(X_df, x=x, y=y,color='clusters', color_continuous_scale=px.colors.sequential.Agsunset,
                      title = f"2D plot of {x} and {y}")
     return fig
 
 def scatter_plot_3d(X_df, x, y, z):
     fig = px.scatter_3d(X_df, x=x, y=y, z=z,color='clusters', 
-                        color_continuous_scale=px.colors.sequential.Inferno,
+                        color_continuous_scale=px.colors.sequential.Agsunset,
                      title = f"3D plot of {x}, {y} and {z}")
-    # fig = px.scatter(X_df, x=x, y=y,color='clusters', color_continuous_scale=px.colors.sequential.Inferno,
+    # fig = px.scatter(X_df, x=x, y=y,color='clusters', color_continuous_scale=px.colors.sequential.Agsunset,
     #                  title = f"2D plot of {x} and {y}")
     return fig
 
 def result_plot(res):
     res.rename({'binned_score':'score_level', 'score':'count'}, axis=1, inplace=True)
     fig = px.histogram(res, x=res['clusters'], y='count',title="Distribution of Score Levels among the Clusters",
-                    color = 'score_level', nbins = len(res['clusters'].unique()))
-    fig.update_layout(bargap=0.5)
+                    color = 'score_level', 
+                    color_discrete_map={'low':'#EF553B', 'medium':'#00CC96', 'high':'#636EFA'}, 
+                    nbins = len(res['clusters'].unique()),
+                    text_auto=True)
+    fig.update_layout(bargap=0.5, width=450)
     return fig
+    
+def tsne(std_df, best_k):
+    # tsne = TSNE(verbose=1, perplexity=10, random_state=2009)  # Changed perplexity from 100 to 50 per FAQ
+    # X_embedded = tsne.fit_transform(std_df)
+    file = open('X_embedded.p','rb')
+    X_embedded = pickle.load(file)
+    labels = kmeans(best_k)
+    
+    data_sne = pd.DataFrame({
+    'axis-1': X_embedded[:,0],
+    'axis-2': X_embedded[:,1],
+    'cluster': labels
+    })
+    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels',
+                     color='cluster', color_continuous_scale=px.colors.sequential.Agsunset)
+    fig.update_layout(width=450)
+    return fig, X_embedded
+
+# Functions for printing keywords for each topic
+def selected_topics(model, vectorizer, top_n=3):
+    current_words = []
+    keywords = []
+    
+    for idx, topic in enumerate(model.components_):
+        words = [(vectorizer.get_feature_names_out()[i], topic[i]) for i in topic.argsort()[:-top_n - 1:-1]]
+        for word in words:
+            if word[0] not in current_words:
+                keywords.append(word)
+                current_words.append(word[0])
+                
+    keywords.sort(key = lambda x: x[1])  
+    keywords.reverse()
+    return_values = []
+    for ii in keywords:
+        return_values.append(ii[0])
+    # print('**',str(return_values))
+    return return_values
+
+# def spacy_tokenizer(sentence):
+#     nlp = nlp = spacy.load("en_core_web_sm")
+#     return [word.lemma_ for word in nlp(sentence) if not (word.like_num or word.is_stop or word.is_punct or word.is_space or len(word)==1)]
+
+def LDA(best_k, X_df):
+    # First, we will create 5 vectorizers, one for each of our cluster labels
+    vectorizers = []
+    
+    # add stopwords
+    my_additional_stop_words = {'nthe','just','blvd', 'comida','place', 'new', 'got', 'food', 'like', 'really'}
+    stop_words = text.ENGLISH_STOP_WORDS.union(my_additional_stop_words)
+    for ii in range(0, best_k):
+        # Creating a vectorizer
+        vectorizers.append(CountVectorizer(min_df=3, stop_words=stop_words, lowercase=True, token_pattern='[a-zA-Z\-][a-zA-Z\-]{2,}'))
+    
+    # Now we will vectorize the data from each of our clusters
+    vectorized_data = []
+    for current_cluster, cvec in enumerate(vectorizers):
+        try:
+            vectorized_data.append(cvec.fit_transform(X_df.loc[X_df['clusters'] == current_cluster, 'comments_list']))
+        except Exception as e:
+            # print("Not enough instances in cluster: " + str(current_cluster))
+            vectorized_data.append(None)
+            
+    # number of topics per cluster
+    NUM_TOPICS_PER_CLUSTER = best_k
+    lda_models = []
+    for ii in range(0, best_k):
+        # Latent Dirichlet Allocation Model
+        lda = LatentDirichletAllocation(n_components=NUM_TOPICS_PER_CLUSTER, max_iter=10, learning_method='online',verbose=False, random_state=2009)
+        lda_models.append(lda)
+    
+    # For each cluster, we had created a corresponding LDA model in the previous step. We will now fit_transform all the LDA models on their respective cluster vectors
+    clusters_lda_data = []
+    for current_cluster, lda in enumerate(lda_models):
+        # print("Current Cluster: " + str(current_cluster))
+        
+        if vectorized_data[current_cluster] != None:
+            clusters_lda_data.append((lda.fit_transform(vectorized_data[current_cluster])))
+    
+    # Extracts the keywords from each cluster
+    all_keywords = []
+    for current_vectorizer, lda in enumerate(lda_models):
+        # print("Current Cluster: " + str(current_vectorizer))
+
+        if vectorized_data[current_vectorizer] != None:
+            all_keywords.append(selected_topics(lda, vectorizers[current_vectorizer]))
+    
+    f=open('topics.txt','w')
+    count = 0
+    for ii in all_keywords:
+        if vectorized_data[count] != None:
+            f.write(', '.join(ii) + "\n")
+        else:
+            f.write("Not enough instances to be determined. \n")
+            f.write(', '.join(ii) + "\n")
+        count += 1
+    f.close()
+    
+    return all_keywords
     
     
 raw_df = raw_data()
@@ -131,19 +242,20 @@ y_df = X_df.binned_score # true segments
 
 # standardize the data
 std_scaler = StandardScaler()
-std_df = pd.DataFrame(std_scaler.fit_transform(X_df.drop(columns=['binned_score','binned_score_y'])), columns=X_df.drop(columns=['binned_score','binned_score_y']).columns)
+std_df = pd.DataFrame(std_scaler.fit_transform(X_df.drop(columns=['binned_score'])), columns=X_df.drop(columns=['binned_score']).columns)
 # cluster_df_scaled = std_df.copy(deep=True)
 
 PCA_ds = pca(std_df)
 # visualizer.show()
 best_k = find_k(PCA_ds)
 st.markdown(f"##### The current best number of clusters is {best_k}")
+# add the elbow plot?
 
-# allow the user to select the number of clusters
-cluster_slider = st.sidebar.slider(
-    min_value=1, max_value=10, value=int(best_k), label="Please select the number of clusters: "
-)
-best_k = cluster_slider
+# # allow the user to select the number of clusters, maybe not!
+# cluster_slider = st.sidebar.slider(
+#     min_value=1, max_value=10, value=int(best_k), label="Please select the number of clusters: "
+# )
+# best_k = cluster_slider
 fig, X_df = pca_plot(PCA_ds, best_k, X_df)
 st.plotly_chart(fig)
 
@@ -153,24 +265,31 @@ count_fig = count_plot(X_df)
 st.plotly_chart(count_fig)
 
 
-# 2. result
-res = X_df.groupby(['clusters','binned_score']).count()['score'].reset_index()
-with st.expander("See resulted data"):
-    st.write('Show the resulted data.')
-    # show the raw dataframe
-    st.dataframe(res, 1000, 300)
-res_fig = result_plot(res)
-st.plotly_chart(res_fig)
+# # 2. result
+# res = X_df.groupby(['clusters','binned_score']).count()['score'].reset_index()
+# res.rename({'score':'count'}, inplace=True)
+# with st.expander("See resulted data"):
+#     st.write('Show the resulted data.')
+#     # show the raw dataframe
+#     st.dataframe(res, 1000, 300)
+# res_fig = result_plot(res)
+# st.plotly_chart(res_fig)
  
     
 # 3. scatter plots
 attributes = []
 dimension = st.sidebar.selectbox("3D plot?", [False, True])
 
-attributes = ['score', 'open_hours_week', 'coded_size',
-       'coded_review_counts', 'coded_price', 'num_photos',
+# compile the raw features
+# size_map = {'0-30':0, '31-60':1, '61-150':2, '151 + ':2}
+attributes = ['score', 'open_hours_week', 'size',
+       'coded_review_counts', 'price', 'num_photos',
        'num_attributes', 'num_questions',
        'polarity', 'subjectivity']
+X_df['price'] = raw_df['price'].tolist()
+X_df['size'] = raw_df['size'].tolist()
+
+
 if dimension:
     feature_x = st.sidebar.selectbox("Please select x axis:", attributes[5:]+attributes[:5])
     feature_y = st.sidebar.selectbox("Please select y axis:", attributes[3:]+attributes[:3])
@@ -184,94 +303,44 @@ else:
     scatter_fig2d = scatter_plot_2d(X_df,feature_x, feature_y)
     st.plotly_chart(scatter_fig2d)
     
-# if individual:
-#     fig, ax = plt.subplots(ncols=n_labels, figsize=(5, 3))
-# else:
-#     fig, ax = plt.subplots(figsize=(7, 4))
+    
+    
+# 4. t-SNE plot
+col1, col2 = st.columns(2)
+with col1:
+    tsne_fig, X_embedded = tsne(std_df, best_k)  # need a saved tsne model
+    st.plotly_chart(tsne_fig, use_container_width=True)  
+# save the final t-SNE
+pickle.dump(X_embedded, open("X_embedded.p", "wb" ))
 
-# for i, yi in enumerate(set(labels)):
-#     if not individual:
-#         a = ax
-#     else:
-#         a = ax[i]
+# 5. result shown with the keywords
+res = X_df.groupby(['clusters','binned_score']).count()['score'].reset_index()
+res.rename({'score':'count'}, inplace=True)
+with st.expander("See resulted data"):
+    st.write('Show the resulted data.')
+    # show the raw dataframe
+    st.dataframe(res, 1000, 300)
+res_fig = result_plot(res)
+with col2:
+    st.plotly_chart(res_fig, use_container_width=True)
 
-#     xi = X[labels == yi]
-#     x_pts = xi[:, 0]
-#     y_pts = xi[:, 1]
-#     a.scatter(x_pts, y_pts, c=clrs[yi])
+X_df['comments_list'] = raw_df['comments_list'].to_list()
 
-#     if selectbox:
-#         confidence_ellipse(
-#             x=x_pts,
-#             y=y_pts,
-#             ax=a,
-#             edgecolor="black",
-#             facecolor=clrs[yi],
-#             alpha=0.2,
-#             # n_std=stdbox,
-#         )
+# all_keywords = LDA(best_k, X_df)
+# print(all_keywords)
+# st.write(all_keywords)
 
-# plt.tight_layout()
-# plt.legend([f"cluster {i}" for i in range(cluster_slider)])
-# plt.figure(figsize=(5, 3))
+# load the stored keywords
+all_keywords = []
+stop_words_appended = ['really']
+with open('topics.txt', 'r') as f:
+    for line in f.readlines():
+        words = line.split(',')
+        tmp = []
+        for word in words:
+            if word not in stop_words_appended:
+                tmp.append(word)
+        all_keywords.append(','.join(tmp))
 
-# col00, col01, col02 = st.columns([1,3,1])
-# with col01:
-#     st.write(fig)
-# #st.plotly_chart(fig)
-
-# # count_df = pd.read_csv('count_res.csv')
-# # clusters = list(count_df.index)
-# # counts = list(count_df.score.values)
-  
-# # fig = plt.figure(figsize = (10, 5))
- 
-# # # creating the bar plot
-# # plt.bar(clusters, counts)
-# col10, col11, col12 = st.columns([1,3,1])
-# with col11:
-#     st.markdown('#### Restaurant Count in each cluster')
-#     count_df = {'cluster':[0,1,2], 'count':[1420, 1093, 271]}
-#     fig = px.bar(
-#         count_df,
-#         x='cluster',
-#         y='count',
-#         color=['green', 'blue', 'red']
-#     )
-#     st.plotly_chart(fig, theme="streamlit", use_container_width=True)
-
-# # res_features = ['Noodles', 'Near USC', 'Low Price']
-# # st.markdown(f'#### common features of these restaurants: ')
-# # for idx, feature in enumerate(res_features):
-# #     st.write(f'cluster {idx} : {feature}')
-
-# col1, col2= st.columns(2)
-# with col1:
-#     st.markdown('#### Yelp Score Mean in each cluster')
-#     image1 = Image.open('yelp_score_mean.jpg')
-#     st.image(image1, caption='yelp_score_mean in clusters')
-
-# with col2:
-#     st.markdown('#### Yelp Review Counts Mean in each cluster')
-#     image2 = Image.open('yelp_review_count_mean.jpg')
-#     st.image(image2, caption='yelp_review_count_mean in clusters')
-
-# col3, col4= st.columns(2)
-# with col3:
-#     st.markdown('#### Yelp Open Hour Mean in each cluster')
-#     image3 = Image.open('yelp_open_hour_mean.jpg')
-#     st.image(image3, caption='yelp_open_hour_mean in clusters')
-
-# with col4:
-#     st.markdown('#### Yelp Price & Size Mean in each cluster')
-#     image4 = Image.open('price_size_mean.jpg')
-#     st.image(image4, caption='price_size_mean in clusters')
-
-# col50, col51, col52 = st.columns([1,2,1])
-# with col51:
-# #     st.markdown('#### Yelp Price & Size Mean in each cluster')
-# #     image5 = Image.open('res.jpg')
-# #     st.image(image5, caption='Results in clusters')
-#     st.markdown('#### Below is the result:')
-#     res_df = pd.read_csv('res.csv')
-#     st.write(res_df)
+for idx in range(len(all_keywords)):
+    st.write(f"cluster {idx} has the keywords: {str(all_keywords[idx])}")
