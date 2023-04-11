@@ -147,7 +147,7 @@ def tsne(PCA_ds, best_k, is_load):
     'axis-2': X_embedded[:,1],
     'cluster': labels
     })
-    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels (Transerred Based on PCA)',
+    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels (Based on PCA)',
                      color='cluster', color_continuous_scale=px.colors.sequential.Agsunset)
     fig.update_layout(width=450)
     return fig, X_embedded
