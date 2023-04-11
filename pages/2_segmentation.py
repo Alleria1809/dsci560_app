@@ -130,11 +130,16 @@ def result_plot(res):
     fig.update_layout(bargap=0.5, width=450)
     return fig
     
-def tsne(std_df, best_k):
-    # tsne = TSNE(verbose=1, perplexity=10, random_state=2009)  # Changed perplexity from 100 to 50 per FAQ
-    # X_embedded = tsne.fit_transform(std_df)
-    file = open('X_embedded.p','rb')
-    X_embedded = pickle.load(file)
+def tsne(PCA_ds, best_k, is_load):
+    if not is_load:
+        tsne = TSNE(verbose=1, perplexity=55, random_state=2009, n_iter=1000, learning_rate=200)  # Changed perplexity from 100 to 50 per FAQ
+        X_embedded = tsne.fit_transform(PCA_ds)
+        # save the final t-SNE
+        pickle.dump(X_embedded, open("X_embedded.p", "wb" ))
+    else:
+        file = open('X_embedded.p','rb')
+        X_embedded = pickle.load(file)
+        
     labels = kmeans(best_k)
     
     data_sne = pd.DataFrame({
@@ -142,7 +147,7 @@ def tsne(std_df, best_k):
     'axis-2': X_embedded[:,1],
     'cluster': labels
     })
-    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels',
+    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels (Transerred Based on PCA)',
                      color='cluster', color_continuous_scale=px.colors.sequential.Agsunset)
     fig.update_layout(width=450)
     return fig, X_embedded
@@ -263,22 +268,11 @@ st.markdown(f"##### Statistics with {best_k} cluster(s)")
 # 1. count plot
 count_fig = count_plot(X_df)
 st.plotly_chart(count_fig)
-
-
-# # 2. result
-# res = X_df.groupby(['clusters','binned_score']).count()['score'].reset_index()
-# res.rename({'score':'count'}, inplace=True)
-# with st.expander("See resulted data"):
-#     st.write('Show the resulted data.')
-#     # show the raw dataframe
-#     st.dataframe(res, 1000, 300)
-# res_fig = result_plot(res)
-# st.plotly_chart(res_fig)
  
     
 # 3. scatter plots
 attributes = []
-dimension = st.sidebar.selectbox("3D plot?", [False, True])
+dimension = st.sidebar.selectbox("Would you like to look into 3 features?", [False, True])
 
 # compile the raw features
 # size_map = {'0-30':0, '31-60':1, '61-150':2, '151 + ':2}
@@ -293,7 +287,7 @@ X_df['size'] = raw_df['size'].tolist()
 if dimension:
     feature_x = st.sidebar.selectbox("Please select x axis:", attributes[5:]+attributes[:5])
     feature_y = st.sidebar.selectbox("Please select y axis:", attributes[3:]+attributes[:3])
-    feature_z = st.sidebar.selectbox("Please select y axis:", attributes[4:]+attributes[:4])
+    feature_z = st.sidebar.selectbox("Please select z axis:", attributes[4:]+attributes[:4])
     fig = scatter_plot_3d(X_df, feature_x, feature_y, feature_z)
     plt.figure(figsize=(5, 3))
     st.plotly_chart(fig)
@@ -308,10 +302,10 @@ else:
 # 4. t-SNE plot
 col1, col2 = st.columns(2)
 with col1:
-    tsne_fig, X_embedded = tsne(std_df, best_k)  # need a saved tsne model
+    # this tsne is transferred from pca to 2d
+    tsne_fig, X_embedded = tsne(PCA_ds, best_k, is_load=True)  # need a saved tsne model, if have trained tsne, then is_load=True
     st.plotly_chart(tsne_fig, use_container_width=True)  
-# save the final t-SNE
-pickle.dump(X_embedded, open("X_embedded.p", "wb" ))
+
 
 # 5. result shown with the keywords
 res = X_df.groupby(['clusters','binned_score']).count()['score'].reset_index()
@@ -332,13 +326,15 @@ X_df['comments_list'] = raw_df['comments_list'].to_list()
 
 # load the stored keywords
 all_keywords = []
-stop_words_appended = ['really']
+stop_words_appended = ['really','don']
 with open('topics.txt', 'r') as f:
     for line in f.readlines():
         words = line.split(',')
+        # print(words)
         tmp = []
         for word in words:
-            if word not in stop_words_appended:
+            word = word.strip('\n')
+            if word.strip(' ') not in stop_words_appended:
                 tmp.append(word)
         all_keywords.append(','.join(tmp))
 
