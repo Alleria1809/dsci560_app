@@ -40,16 +40,20 @@ st.markdown(
 #     bytes_data = uploaded_file.getvalue()
 #     st.write(bytes_data)
 
+st.write("""
+          Pipeline: Standardize data -> KMeans find the best number of clusters -> PCA visualization\
+             + t-SNE visualization + Topic Modeling
+         """)
 
-# @st.cache_data
 # load raw features
+# @st.cache_data
 def raw_data():
     raw_df = pd.read_csv('features_for_segmentation_0403.csv')
     # raw_df = pd.read_csv('features_for_segmentation.csv')
     return raw_df
 
-# @st.cache_data
 # load preprocessed features
+# @st.cache_data
 def load_data():
     model_df = pd.read_csv('features_0403.csv')
     # model_df = pd.read_csv('features.csv')  # up to date data
@@ -63,23 +67,23 @@ def pca(std_df):
     # PCA_ds.describe().T
     return PCA_ds
 
-def kmeans(best_k):
+def kmeans(df, best_k):
     model = KMeans(n_clusters=best_k, random_state=2009)
-    model.fit(PCA_ds)
+    model.fit(df)
     labels = model.labels_
     # save the labels generate with k-means(20)
     # pickle.dump(labels, open("labels.p", "wb" ))
     return labels
     
-def find_k(PCA_ds):
+def find_k(df):
     model = KMeans(random_state=2009)
-    X = np.array(PCA_ds)
+    X = np.array(df)
     visualizer = KElbowVisualizer(model, k=(1,11)).fit(X)
     best_k = visualizer.elbow_value_ # Get elbow value
     return best_k
     
-def pca_plot(PCA_ds, best_k, X_df):
-    labels = kmeans(best_k)
+def pca_plot(PCA_ds, std_df, best_k, X_df):
+    labels = kmeans(std_df, best_k)
     #Adding the Clusters feature to the orignal dataframe.
     PCA_ds['clusters'] = labels
     X_df['clusters'] = labels
@@ -130,24 +134,24 @@ def result_plot(res):
     fig.update_layout(bargap=0.5, width=450)
     return fig
     
-def tsne(PCA_ds, best_k, is_load):
+def tsne(df, best_k, is_load):
     if not is_load:
         tsne = TSNE(verbose=1, perplexity=55, random_state=2009, n_iter=1000, learning_rate=200)  # Changed perplexity from 100 to 50 per FAQ
-        X_embedded = tsne.fit_transform(PCA_ds)
+        X_embedded = tsne.fit_transform(df)
         # save the final t-SNE
         pickle.dump(X_embedded, open("X_embedded.p", "wb" ))
     else:
         file = open('X_embedded.p','rb')
         X_embedded = pickle.load(file)
         
-    labels = kmeans(best_k)
+    labels = kmeans(df, best_k)
     
     data_sne = pd.DataFrame({
     'axis-1': X_embedded[:,0],
     'axis-2': X_embedded[:,1],
     'cluster': labels
     })
-    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels (Based on PCA)',
+    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels',
                      color='cluster', color_continuous_scale=px.colors.sequential.Agsunset)
     fig.update_layout(width=450)
     return fig, X_embedded
@@ -250,9 +254,12 @@ std_scaler = StandardScaler()
 std_df = pd.DataFrame(std_scaler.fit_transform(X_df.drop(columns=['binned_score'])), columns=X_df.drop(columns=['binned_score']).columns)
 # cluster_df_scaled = std_df.copy(deep=True)
 
+# reduce dimension to 3d at first
+best_k = find_k(std_df)
 PCA_ds = pca(std_df)
 # visualizer.show()
-best_k = find_k(PCA_ds)
+# run kmeans to find the best k
+# best_k = find_k(PCA_ds)
 st.markdown(f"##### The current best number of clusters is {best_k}")
 # add the elbow plot?
 
@@ -261,7 +268,7 @@ st.markdown(f"##### The current best number of clusters is {best_k}")
 #     min_value=1, max_value=10, value=int(best_k), label="Please select the number of clusters: "
 # )
 # best_k = cluster_slider
-fig, X_df = pca_plot(PCA_ds, best_k, X_df)
+fig, X_df = pca_plot(PCA_ds, std_df, best_k, X_df)
 st.plotly_chart(fig)
 
 st.markdown(f"##### Statistics with {best_k} cluster(s)")
@@ -303,7 +310,7 @@ else:
 col1, col2 = st.columns(2)
 with col1:
     # this tsne is transferred from pca to 2d
-    tsne_fig, X_embedded = tsne(PCA_ds, best_k, is_load=True)  # need a saved tsne model, if have trained tsne, then is_load=True
+    tsne_fig, X_embedded = tsne(std_df, best_k, is_load=True)  # need a saved tsne model, if have trained tsne, then is_load=True
     st.plotly_chart(tsne_fig, use_container_width=True)  
 
 
