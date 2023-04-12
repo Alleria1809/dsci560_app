@@ -293,6 +293,7 @@ if choice == 'I want to explore the features!':
          'vegetarian': vegetarian,
          'reservation': reservation}
     recommendations = recommendation_from_features(data_key, input1) 
+    st.write(f'#### Recommended 10 Restaurants For You:')
     for  name, url, score in recommendations:
         # [@Project APP](https://github.com/Alleria1809/dsci560_app)
         st.write(f"restaurant: [{name}]({url}), score: {score}")
@@ -306,6 +307,7 @@ else:
     # input2 = 'Moon BBQ 2'
     input2 = name
     recommendations = recommendation_from_restaurant(data_key, input2)
+    st.write(f'#### Recommended 10 Restaurants For You:')
     for  name, url, score in recommendations:
         # [@Project APP](https://github.com/Alleria1809/dsci560_app)
         st.write(f"restaurant: [{name}]({url}), score: {score}")
