@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import time
 import random
+import functools
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Recommendation", page_icon=":sparkles:", layout="wide")
 
@@ -230,6 +232,24 @@ def recommendation_from_restaurant(df, input):
   final_candidates = jaccard_top10(df, tags)
   return final_candidates
 
+def show_restaurants(recommendations):
+  matched_rest = []
+  rest_score = []
+  for i in range(len(recommendations)):
+      matched_rest.append(recommendations[i][0])
+      rest_score.append(recommendations[i][-1])
+      
+  # chart = functools.partial(st.plotly_chart, use_container_width=True)
+  labels = matched_rest
+  values = rest_score
+  
+  # Use `hole` to create a donut-like pie chart
+  fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+  fig.update_layout(
+  title={'text': "Recommended 10 Restaurants for you"})
+  return fig
+  
+
 # @st.cache_data
 def load_data():
     data = pd.read_csv('combined_rest_health_0331.csv')
@@ -292,11 +312,22 @@ if choice == 'I want to explore the features!':
          'takeout': takeout,
          'vegetarian': vegetarian,
          'reservation': reservation}
-    recommendations = recommendation_from_features(data_key, input1) 
-    st.write(f'#### Recommended 10 Restaurants For You:')
-    for  name, url, score in recommendations:
-        # [@Project APP](https://github.com/Alleria1809/dsci560_app)
-        st.write(f"restaurant: [{name}]({url}), score: {score}")
+    with st.form(key="Form :", clear_on_submit = True):
+      Submit = st.form_submit_button(label='Search')
+    if Submit:
+      recommendations = recommendation_from_features(data_key, input1) 
+      
+      col1, col2 = st.columns(2)
+      with col1:
+        chart = functools.partial(st.plotly_chart, use_container_width=True)
+        fig = show_restaurants(recommendations)
+        chart(fig)
+                    
+      with col2:  
+        st.write(f'##### Recommended Restaurants list:')
+        for  name, url, score in recommendations:
+            # [@Project APP](https://github.com/Alleria1809/dsci560_app)
+            st.write(f"restaurant: [{name}]({url})")
     
 else:
     name =  st.text_input(
@@ -305,12 +336,24 @@ else:
         key="restaurant_name",
     )
     # input2 = 'Moon BBQ 2'
-    input2 = name
-    recommendations = recommendation_from_restaurant(data_key, input2)
-    st.write(f'#### Recommended 10 Restaurants For You:')
-    for  name, url, score in recommendations:
-        # [@Project APP](https://github.com/Alleria1809/dsci560_app)
-        st.write(f"restaurant: [{name}]({url}), score: {score}")
+    with st.form(key="Form :", clear_on_submit = True):
+      Submit = st.form_submit_button(label='Search')
+      
+    if Submit:
+      input2 = name
+      recommendations = recommendation_from_restaurant(data_key, input2)
+      
+      col3, col4 = st.columns(2)
+      with col3:
+        chart = functools.partial(st.plotly_chart, use_container_width=True)
+        fig = show_restaurants(recommendations)
+        chart(fig)
+                    
+      with col4:  
+        st.write(f'##### Recommended Restaurants list:')
+        for  name, url, score in recommendations:
+            # [@Project APP](https://github.com/Alleria1809/dsci560_app)
+            st.write(f"restaurant: [{name}]({url})")
 
 # restaurants = {'Plan Check Kitchen + Bar': 'https://www.yelp.com/biz/plan-check-kitchen-bar-los-angeles-9',
 #                "Justin Queso's Tex-Mex Restaurant & Bar": 'https://www.yelp.com/biz/justin-quesos-tex-mex-restaurant-and-bar-west-hollywood?osq=Restaurants',
