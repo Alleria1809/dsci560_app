@@ -335,7 +335,7 @@ X_df['comments_list'] = raw_df['comments_list'].to_list()
 
 # load the stored keywords
 all_keywords = []
-stop_words_appended = ['really','don','good','great']
+stop_words_appended = ['really','don','good','great','restaurant']
 with open('topics.txt', 'r') as f:
     for line in f.readlines():
         words = line.split(',')
