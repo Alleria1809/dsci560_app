@@ -1,5 +1,5 @@
-chicken, order, good, great, breakfast, pool, fries, hotel, shake, shack, bread, soul, gluten, sourdough
-pancakes, ordered, service, good, great, time
-good, order, great, pupusas, donuts, korean, pupusa, breakfast, cheese, bowl, burger, fries, falafel
-good, service, pasta, burger, pupusas, fries, hot, menu, salsa, time, come
-service, good, sandwich, great, pizza, donuts, churros, cake, donut, pizzas, room, dog, churro
+good, great, service, ramen, noodles, broth, meat, quality, room, available, people, kimchi, carbonara, thai
+delicious, chicken, ice, cream, soup, cone, order, time, great, good
+good, service, pizza, meat, korean, workers, customer, order, chicken, time
+good, great, chicken, breakfast, sandwich, bar, pizza, indian, ethiopian, injera, sinful
+super, restaurant, good, great, order, rooftop, service

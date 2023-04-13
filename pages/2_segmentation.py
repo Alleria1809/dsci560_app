@@ -82,8 +82,8 @@ def find_k(df):
     best_k = visualizer.elbow_value_ # Get elbow value
     return best_k
     
-def pca_plot(PCA_ds, std_df, best_k, X_df):
-    labels = kmeans(std_df, best_k)
+def pca_plot(PCA_ds, best_k, X_df):
+    labels = kmeans(PCA_ds, best_k)
     #Adding the Clusters feature to the orignal dataframe.
     PCA_ds['clusters'] = labels
     X_df['clusters'] = labels
@@ -151,7 +151,7 @@ def tsne(df, best_k, is_load):
     'axis-2': X_embedded[:,1],
     'cluster': labels
     })
-    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels',
+    fig = px.scatter(data_sne, x='axis-1', y='axis-2', title='t-SNE with KMeans Labels(Based on PCA)',
                      color='cluster', color_continuous_scale=px.colors.sequential.Agsunset)
     fig.update_layout(width=450)
     return fig, X_embedded
@@ -251,12 +251,13 @@ y_df = X_df.binned_score # true segments
 
 # standardize the data
 std_scaler = StandardScaler()
-std_df = pd.DataFrame(std_scaler.fit_transform(X_df.drop(columns=['binned_score'])), columns=X_df.drop(columns=['binned_score']).columns)
+std_df = pd.DataFrame(std_scaler.fit_transform(X_df.drop(columns=['binned_score','binned_score_y'])), columns=X_df.drop(columns=['binned_score','binned_score_y']).columns)
 # cluster_df_scaled = std_df.copy(deep=True)
+# print(std_df)
 
 # reduce dimension to 3d at first
-best_k = find_k(std_df)
 PCA_ds = pca(std_df)
+best_k = find_k(PCA_ds)
 # visualizer.show()
 # run kmeans to find the best k
 # best_k = find_k(PCA_ds)
@@ -268,7 +269,7 @@ st.markdown(f"##### The current best number of clusters is {best_k}")
 #     min_value=1, max_value=10, value=int(best_k), label="Please select the number of clusters: "
 # )
 # best_k = cluster_slider
-fig, X_df = pca_plot(PCA_ds, std_df, best_k, X_df)
+fig, X_df = pca_plot(PCA_ds, best_k, X_df)
 st.plotly_chart(fig)
 
 st.markdown(f"##### Statistics with {best_k} cluster(s)")
@@ -310,7 +311,7 @@ else:
 col1, col2 = st.columns(2)
 with col1:
     # this tsne is transferred from pca to 2d
-    tsne_fig, X_embedded = tsne(std_df, best_k, is_load=True)  # need a saved tsne model, if have trained tsne, then is_load=True
+    tsne_fig, X_embedded = tsne(PCA_ds, best_k, is_load=True)  # need a saved tsne model, if have trained tsne, then is_load=True
     st.plotly_chart(tsne_fig, use_container_width=True)  
 
 
@@ -329,11 +330,11 @@ X_df['comments_list'] = raw_df['comments_list'].to_list()
 
 # all_keywords = LDA(best_k, X_df)
 # print(all_keywords)
-# st.write(all_keywords)
+# # st.write(all_keywords)
 
 # load the stored keywords
 all_keywords = []
-stop_words_appended = ['really','don']
+stop_words_appended = ['really','don','good','great']
 with open('topics.txt', 'r') as f:
     for line in f.readlines():
         words = line.split(',')
