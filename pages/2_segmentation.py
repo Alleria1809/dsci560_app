@@ -41,8 +41,9 @@ st.markdown(
 #     st.write(bytes_data)
 
 st.write("""
-          Pipeline: Standardize data -> KMeans find the best number of clusters -> PCA visualization\
-             + t-SNE visualization + Topic Modeling
+          Pipeline: Standardize data -> PCA Dimension Reduction to 3D -> KMeans find the best number of clusters 
+          -> Visualization\
+             + t-SNE Visualization + Topic Modeling
          """)
 
 # load raw features
