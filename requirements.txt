@@ -108,6 +108,7 @@ scipy==1.10.1
 temp-email-validator==0.1
 tenacity==8.0.1
 terminado==0.15.0
+textblob==0.17.1
 tinycss2==1.1.1
 toml==0.10.2
 toolz==0.11.2

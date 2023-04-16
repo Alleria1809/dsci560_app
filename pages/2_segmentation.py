@@ -65,6 +65,8 @@ def pca(std_df):
     pca = PCA(n_components=3)
     pca.fit(std_df)
     PCA_ds = pd.DataFrame(pca.transform(std_df), columns=(["dim1","dim2", "dim3"]))
+    print(pca.explained_variance_ratio_)
+    print(np.cumsum(pca.explained_variance_ratio_))
     # PCA_ds.describe().T
     return PCA_ds
 

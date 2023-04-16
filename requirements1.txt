@@ -372,6 +372,7 @@ termcolor==2.2.0
 terminado==0.17.1
 testpath @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_aaf4aec7-dbb6-43d6-9707-824338b4efc82yrt6xjp/croots/recipe/testpath_1655908558843/work
 text-unidecode @ file:///Users/ktietz/demo/mc3/conda-bld/text-unidecode_1629401354553/work
+textblob==0.17.1
 textdistance @ file:///tmp/build/80754af9/textdistance_1612461398012/work
 thinc @ file:///Users/runner/miniforge3/conda-bld/thinc_1678302848354/work
 thinc-apple-ops==0.1.3
