@@ -355,6 +355,7 @@ srsly @ file:///Users/runner/miniforge3/conda-bld/srsly_1677657664941/work
 stack-data==0.6.2
 statsmodels @ file:///opt/concourse/worker/volumes/live/90a089a9-fdd6-4c7e-631b-5fdf9cf55d62/volume/statsmodels_1648033311105/work
 streamlit==1.19.0
+streamlit-card==0.0.4
 sympy @ file:///opt/concourse/worker/volumes/live/2af8c70b-e999-41ad-6ca8-39318707cbda/volume/sympy_1647854069899/work
 TA-Lib==0.4.25
 tables @ file:///opt/concourse/worker/volumes/live/daa73f70-754b-4f28-73ce-6f96c40f4b9d/volume/pytables_1607975400838/work

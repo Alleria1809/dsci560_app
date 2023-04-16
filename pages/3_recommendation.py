@@ -5,6 +5,7 @@ import time
 import random
 import functools
 import plotly.graph_objects as go
+from streamlit_card import card
 
 st.set_page_config(page_title="Recommendation", page_icon=":sparkles:", layout="wide")
 
@@ -95,11 +96,16 @@ def exact_match(df, tags):
   candidate_pairs = []
   for i in range(len(df)):
     restaurant = df.iloc[i]
-    if tags.issubset(set(restaurant['tags'])):
+    if tags.issubset(set(restaurant['tags'])) and restaurant['name'] not in candidate_restaurant:
       candidate_restaurant.append(restaurant['name'])
-      candidate_pairs.append((restaurant['name'], restaurant['url'], 'exact_match'))
+      candidate_pairs.append((restaurant['name'], restaurant['url'], restaurant['risk_level'], float(1.0)))
   return candidate_restaurant, candidate_pairs
 
+
+# Remove restaurants that are already in candidate_pairs
+def chosen_df(df, candidate_restaurant):
+  final_df = df[df.name.isin(candidate_restaurant) == True]
+  return final_df
 
 # Remove restaurants that are already in candidate_pairs
 def remaining_df(df, candidate_restaurant):
@@ -130,7 +136,7 @@ def jaccard_match(df, tags, candidate_pairs):
   while i < len(final_df) and len(candidate_pairs) < 10:
     # If there are ties, record a list of restaurants with the current jaccard similarity
     if final_df.iloc[i]['jaccard'] == curr_jaccard:
-      curr_jaccard_candidates.append((final_df.iloc[i]['name'], final_df.iloc[i]['url'], final_df.iloc[i]['jaccard']))
+      curr_jaccard_candidates.append((final_df.iloc[i]['name'], final_df.iloc[i]['url'], final_df.iloc[i]['risk_level'], final_df.iloc[i]['jaccard']))
       i += 1
     # As soon as a different, lower jaccard similarity appears
     else:
@@ -155,22 +161,29 @@ def jaccard_match(df, tags, candidate_pairs):
 
 # Recommendation
 def recommendation_from_features(df, input):
-  tags = set()
+  exact_tags = set()
+  for category in input['category']:
+    exact_tags.add(category)
+  exact_tags.add(input['risk_level'])
+  
+  jaccard_tags = set()
   for value in input.values():
     if type(value) == type('str'):
-      tags.add(value)
+      jaccard_tags.add(value)
     else:
       for subvalue in value:
-        tags.add(subvalue)
+        jaccard_tags.add(subvalue)
   
-  candidate_restaurant, candidate_pairs = exact_match(df, tags)
-  # If candidate size from exact match is more than 10, choose a random sample
+  # Collect candidates that matches the category & risk_level tags first - we consider they weights more
+  candidate_restaurant, candidate_pairs = exact_match(df, exact_tags)
+  # If candidate size from exact match is more than 10, do jaccard match on these candidates using all tags
   if len(candidate_pairs) >= 10:
-    final_candidates = random.sample(candidate_pairs, 10)
-  # Else use jaccard match to fill the spots
+    df = chosen_df(df, candidate_restaurant)
+    final_candidates = jaccard_match(df, jaccard_tags, [])
+  # Else use jaccard match to fill the spots using all tags
   else:
     df = remaining_df(df, candidate_restaurant)
-    final_candidates = jaccard_match(df, tags, candidate_pairs)
+    final_candidates = jaccard_match(df, jaccard_tags, candidate_pairs)
 
   return final_candidates
 
@@ -179,14 +192,19 @@ def get_category(data):
     categories = set()
     for x in list(data.category):
         # 'Korean, Barbeque'
-        clists = x.split(',')
+        clists = x.split(', ')
         # print(clists)
         for c in clists:
-            c = c.replace(' ','')
+            c = c.rstrip()
             categories.add(c)
     return list(categories)
 
 # Demo #2 - recommendation based on current resuaurant
+def get_restaurant_name(data):
+    names = set()
+    for x in list(data.name):
+      names.add(x)
+    return names
 
 # Choose candidates by calculating jaccard similarities
 def jaccard_top10(df, tags):
@@ -204,7 +222,7 @@ def jaccard_top10(df, tags):
   while i < len(final_df) and len(candidate_pairs) < 11:
     # If there are ties, record a list of restaurants with the current jaccard similarity
     if final_df.iloc[i]['jaccard'] == curr_jaccard:
-      curr_jaccard_candidates.append((final_df.iloc[i]['name'], final_df.iloc[i]['url'], final_df.iloc[i]['jaccard']))
+      curr_jaccard_candidates.append((final_df.iloc[i]['name'], final_df.iloc[i]['url'], final_df.iloc[i]['risk_level'], final_df.iloc[i]['jaccard']))
       i += 1
     # As soon as a different, lower jaccard similarity appears
     else:
@@ -229,7 +247,7 @@ def jaccard_top10(df, tags):
 # Recommendation
 def recommendation_from_restaurant(df, input):
   tags = set(df[df['name'] == input]['tags'].tolist()[0])
-  final_candidates = jaccard_top10(df, tags)
+  final_candidates = jaccard_top10(df, tags)[1:]
   return final_candidates
 
 def show_restaurants(recommendations):
@@ -245,8 +263,6 @@ def show_restaurants(recommendations):
   
   # Use `hole` to create a donut-like pie chart
   fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-  fig.update_layout(
-  title={'text': "Recommended 10 Restaurants for you"})
   return fig
   
 
@@ -276,65 +292,91 @@ choice = st.radio(
 
 
 if choice == 'I want to explore the features!':
+    categories = get_category(data_key)
+    category = st.multiselect(
+        'Please select the restaurant category:',
+        categories,)
+
     risk_level = st.selectbox(
         'Please select the risk level:',
-        ['LOW', 'MEDIUM', 'HIGH'],)
+        ['LOW', 'MODER', 'HIGH'],)
 
     price = st.selectbox(
         'Please select the restaurant price:',
         ['$', '$$', '$$$'],)
     
-    categories = get_category(data_key)
-    category = st.multiselect(
-        'Please select the restaurant category:',
-        categories,)
-    
     delivery = st.selectbox(
-        'Please select the risk level:',
-        ['offers delivery', 'no Delivery'],)
+        'Please select the delivery option:',
+        ['offers delivery', 'no delivery'],)
     
     takeout = st.selectbox(
-        'Please select the risk level:',
+        'Please select the takeout option:',
         ['offers takeout', 'no takeout'],)
+
+    group = st.selectbox(
+        'Please select the group option:',
+        ['good for groups', 'not good for groups'],)
     
     vegetarian = st.selectbox(
-        'Please select the risk level:',
+        'Please select the vegetarian option:',
         ['offers vegetarian options', 'no vegetarian options'],)
     
     reservation = st.selectbox(
-        'Please select the risk level:',
+        'Please select the reservation option:',
         ['offers reservation', 'no reservation'],)
+    
+    wheelchair = st.selectbox(
+        'Please select the wheelchair option:',
+        ['wheelchair accessible', 'wheelchair not accessible'],)
     
     input1 = {'risk_level': risk_level,
          'price': price,
          'category': category,
          'delivery': delivery,
          'takeout': takeout,
+         'group': group,
          'vegetarian': vegetarian,
-         'reservation': reservation}
+         'reservation': reservation,
+         'wheelchair': wheelchair}
+    
     with st.form(key="Form :", clear_on_submit = True):
       Submit = st.form_submit_button(label='Search')
     if Submit:
       recommendations = recommendation_from_features(data_key, input1) 
       
-      col1, col2 = st.columns(2)
-      with col1:
-        chart = functools.partial(st.plotly_chart, use_container_width=True)
-        fig = show_restaurants(recommendations)
-        chart(fig)
+      # Pie Chart
+      st.write('\n')
+      st.write(f'##### Recommended Restaurants Pie Chart:')
+      chart = functools.partial(st.plotly_chart, use_container_width=True)
+      fig = show_restaurants(recommendations)
+      chart(fig)
                     
-      with col2:  
-        st.write(f'##### Recommended Restaurants list:')
-        for  name, url, score in recommendations:
+      # Cards
+      st.write('\n')
+      st.write(f'##### Recommended Restaurants list:')
+      col1, col2 = st.columns(2)
+      leftcol = [recommendations[0], recommendations[2], recommendations[4], recommendations[6], recommendations[8]]
+      rightcol = [recommendations[1], recommendations[3], recommendations[5], recommendations[7], recommendations[9]]
+      with col1:
+        for name, url, risk_level, score in leftcol:
             # [@Project APP](https://github.com/Alleria1809/dsci560_app)
-            st.write(f"restaurant: [{name}]({url})")
+          # st.write(f"restaurant: [{name}]({url})({risk_level})")
+            card(title=name, text=risk_level, url=url)
+
+      with col2:
+        for name, url, risk_level, score in rightcol:
+            # [@Project APP](https://github.com/Alleria1809/dsci560_app)
+          # st.write(f"restaurant: [{name}]({url})({risk_level})")
+            card(title=name, text=risk_level, url=url)
     
 else:
-    name =  st.text_input(
+    names = get_restaurant_name(data_key)
+    name =  st.selectbox(
         "Please input your ideal restaurant name: ",
-        "Moon BBQ 2",
+        names,
         key="restaurant_name",
     )
+
     # input2 = 'Moon BBQ 2'
     with st.form(key="Form :", clear_on_submit = True):
       Submit = st.form_submit_button(label='Search')
@@ -342,18 +384,31 @@ else:
     if Submit:
       input2 = name
       recommendations = recommendation_from_restaurant(data_key, input2)
+
+      # Pie Chart
+      st.write('\n')
+      st.write(f'##### Recommended Restaurants Pie Chart:')
+      chart = functools.partial(st.plotly_chart, use_container_width=True)
+      fig = show_restaurants(recommendations)
+      chart(fig)
       
+      # Cards
+      st.write('\n')
+      st.write(f'##### Recommended Restaurants list:')
       col3, col4 = st.columns(2)
+      leftcol = [recommendations[0], recommendations[2], recommendations[4], recommendations[6], recommendations[8]]
+      rightcol = [recommendations[1], recommendations[3], recommendations[5], recommendations[7], recommendations[9]]
       with col3:
-        chart = functools.partial(st.plotly_chart, use_container_width=True)
-        fig = show_restaurants(recommendations)
-        chart(fig)
-                    
-      with col4:  
-        st.write(f'##### Recommended Restaurants list:')
-        for  name, url, score in recommendations:
+        for name, url, risk_level, score in leftcol:
             # [@Project APP](https://github.com/Alleria1809/dsci560_app)
-            st.write(f"restaurant: [{name}]({url})")
+          # st.write(f"restaurant: [{name}]({url})({risk_level})")
+            card(title=name, text=risk_level, url=url)
+
+      with col4:
+        for name, url, risk_level, score in rightcol:
+            # [@Project APP](https://github.com/Alleria1809/dsci560_app)
+          # st.write(f"restaurant: [{name}]({url})({risk_level})")
+            card(title=name, text=risk_level, url=url)
 
 # restaurants = {'Plan Check Kitchen + Bar': 'https://www.yelp.com/biz/plan-check-kitchen-bar-los-angeles-9',
 #                "Justin Queso's Tex-Mex Restaurant & Bar": 'https://www.yelp.com/biz/justin-quesos-tex-mex-restaurant-and-bar-west-hollywood?osq=Restaurants',

@@ -51,7 +51,7 @@ if uploaded_file is not None:
     dff_m.rename(columns={'score': 'rating'}, inplace=True)
     dff_m.columns = map(lambda x: str(x).upper(), dff_m.columns)
     #zip
-    dff_m.FACILITY_ZIP = dff_m.FACILITY_ZIP.apply(lambda x: x[:5])
+    dff_m.FACILITY_ZIP = dff_m.FACILITY_ZIP.apply(lambda x: str(x)[:5])
     #review_counts
     def func0(x):
         if 'k' in x:
@@ -59,7 +59,7 @@ if uploaded_file is not None:
         else:
             return int(x)
     dff_m.REVIEW_COUNTS.fillna('0 reviews', inplace=True)
-    dff_m.REVIEW_COUNTS = dff_m.REVIEW_COUNTS.apply(lambda x: x.strip('(').strip(')').split()[0])
+    dff_m.REVIEW_COUNTS = dff_m.REVIEW_COUNTS.apply(lambda x: str(x).strip('(').strip(')').split()[0])
     dff_m.REVIEW_COUNTS = dff_m.REVIEW_COUNTS.apply(func0)
     #price
     dff_m.PRICE = dff_m.PRICE.map({'$': '1', '$$': '2', '$$$': '3', '$$$$': '4'})
@@ -120,7 +120,8 @@ if uploaded_file is not None:
 
     # show high/medium risk
     st.markdown("#### Show medium/high risk")
-    st.dataframe(dff_m[(dff_m['prediction_result']=='high risk') | (dff_m['prediction_result']=='medium risk')].drop(['RISK_LEVEL'], axis=1), 1000, 300) 
+    with st.expander("See Prediction High/Medium Risk"):
+        st.dataframe(dff_m[(dff_m['prediction_result']=='high risk') | (dff_m['prediction_result']=='medium risk')].drop(['RISK_LEVEL'], axis=1), 1000, 300) 
 
     #visualize
     st.markdown("#### Prediction Distribution")
@@ -138,9 +139,10 @@ if uploaded_file is not None:
     
     # yelp ratings
     medium_low_df = dff_m[(dff_m['prediction_result']=='high risk') | (dff_m['prediction_result']=='medium risk')]
-    fig = px.histogram(medium_low_df['RATING'], x='RATING', text_auto=True, 
-                       title='Yelp Rating Distribution of the Medium and Low Risk Restaurants')
-    st.plotly_chart(fig)
+    if len(medium_low_df):
+        fig = px.histogram(medium_low_df['RATING'], x='RATING', text_auto=True, 
+                        title='Yelp Rating Distribution of the Medium and Low Risk Restaurants')
+        st.plotly_chart(fig)
     
 
 #    # zipcode and city
