@@ -141,7 +141,7 @@ if uploaded_file is not None:
     medium_low_df = dff_m[(dff_m['prediction_result']=='high risk') | (dff_m['prediction_result']=='medium risk')]
     if len(medium_low_df):
         fig = px.histogram(medium_low_df['RATING'], x='RATING', text_auto=True, 
-                        title='Yelp Rating Distribution of the Medium and Low Risk Restaurants')
+                        title='Yelp Rating Distribution of the Medium and High Risk Restaurants')
         st.plotly_chart(fig)
     
 
