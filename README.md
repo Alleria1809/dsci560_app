@@ -37,3 +37,6 @@ Use TensorFlow framework to build neural network models for multiclass classific
 Generate tag sets for each restaurant.
 Compute Jaccard similarities.
 Recommendation algorithms for both recommendation functions - inputting features & inputting name.
+
+#### Project Video
+https://drive.google.com/file/d/1i-z4BUMXxMZFXgBARAiYcsB-Vs2owMNM/view?usp=sharing
