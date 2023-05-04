@@ -40,3 +40,7 @@ Recommendation algorithms for both recommendation functions - inputting features
 
 #### Project Video
 https://drive.google.com/file/d/1i-z4BUMXxMZFXgBARAiYcsB-Vs2owMNM/view?usp=sharing
+
+
+#### Presentation
+Please refer to the Final_Presentation.pdf
